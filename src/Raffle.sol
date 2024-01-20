@@ -18,6 +18,7 @@ contract Raffle is VRFConsumerBaseV2{
     error Raffle_NotEnoughEthSend();
     error Raffle_transferFail();
     error Raffle_RaffleNotOpen();
+    error Raffle_upKeepNeeded(uint256 currentBalance, uint256 playerLength, uint256 raffleState);
 
     // Enum
     enum RaffleStates{
@@ -77,21 +78,51 @@ contract Raffle is VRFConsumerBaseV2{
         emit EnteredRaffle(msg.sender);
     }
 
-    function pickWinner() public{
+    
+    /**
+     * @dev This is the function that chainlink automation nodes call
+     * to see if its the time to perform an upkeep.
+     * The following must be true for this to return true :-
+     * 1) The time interval has passed between the raffle runs.
+     * 2) The raffle is in the OPEN state
+     * 3) The contract has Eth (aka, players)
+     * 4) (Implicit) The subscription is funded with the link
+     */
+
+    function checkUpKeep(bytes memory /* performData */) /* We can cmt tyhe argument if the funtions takes the argument but we dont want that part of code */
+        public view returns(bool upKeepNeeded, bytes memory /* performData */){
+
+            bool checkInterval = (block.timestamp - s_lastTimeStramp) >= i_interval;
+            bool checkRaffleState = s_raffleState == RaffleStates.OPEN;
+            bool checkEth = address(this).balance > 0;
+            bool checkPlayers = s_playerAddress.length > 0;
+
+            upKeepNeeded = (checkInterval && checkRaffleState && checkEth && checkPlayers);
+            return (upKeepNeeded, "0x0");
+
+        }
+
+    function performUpkeep(bytes calldata /* performData */) external{
         // Functionality of pickWinner-
         // 1) get a random number
         // 2) Pick a winner
         // 3) Make it automatic
 
-        if((block.timestamp - s_lastTimeStramp) < i_interval){
-            revert();
+        (bool upKeepNeeded, ) = checkUpKeep("");
+        if(!upKeepNeeded){
+            revert Raffle_upKeepNeeded( /* I am passing argument so that I can know the reason fopr revert */
+                address(this).balance,
+                s_playerAddress.length,
+                uint256(s_raffleState)
+            );
         }
+
 
         s_raffleState = RaffleStates.CALCULATING;
 
 
         // i_vrfCoordinator/COORDINATOR is a vrf coordinator address which depends on chain to chain, in simple terms this is the contract from which we will request random number
-        uint256 requestId = i_vrfCoordinator.requestRandomWords(
+        i_vrfCoordinator.requestRandomWords(
             i_gasLane, // this is bytes32 gas lane, which tells us how much gas we want to bumb to, it's chain dependent
             i_subscriptionId, // this is our subscription id to the chainlink vrf
             REQUEST_CONFIRMATIONS, // dont know exactly but its default value is 3 and we can set higher
@@ -102,7 +133,7 @@ contract Raffle is VRFConsumerBaseV2{
     }
 
     function fulfillRandomWords( /* this is the function we need to call in order to get random numbers and it will process our request id that we made in above function */
-        uint256 requestId,
+        uint256 /* requestId */,
         uint256[] memory randomWords
     ) internal override { /* this is override bcz it exists in the VRFConsumerBaseV2 file, check it to know more */
         uint256 indexOfWinner = randomWords[0] % s_playerAddress.length;
@@ -114,7 +145,7 @@ contract Raffle is VRFConsumerBaseV2{
         s_playerAddress = new address payable[](0); // resetting the array from 0th index
         s_lastTimeStramp = block.timestamp;
 
-        {bool callSuccess, } = winner.call{value: address(this).balance}("");
+        (bool callSuccess, ) = winner.call{value: address(this).balance}("");
         if(!callSuccess){
             revert Raffle_transferFail();
         }
