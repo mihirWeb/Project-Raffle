@@ -6,7 +6,7 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2
 
 
 /**
- * @title a simple Raffle contract that will choose a random winner after sometime
+ * @title a simple Raffle contract that will choose a random winner automatically after sometime
  * @author Mihir Pratap Singh
  * @notice This contract is for creating a simple raffle
  * @dev implements chainlink VRFv2
@@ -89,7 +89,7 @@ contract Raffle is VRFConsumerBaseV2{
      * 4) (Implicit) The subscription is funded with the link
      */
 
-    function checkUpKeep(bytes memory /* performData */) /* We can cmt tyhe argument if the funtions takes the argument but we dont want that part of code */
+    function checkUpKeep(bytes memory /* performData */) /* We can cmt the argument if the funtions takes the argument but we dont want that part of code */
         public view returns(bool upKeepNeeded, bytes memory /* performData */){
 
             bool checkInterval = (block.timestamp - s_lastTimeStramp) >= i_interval;
@@ -101,6 +101,15 @@ contract Raffle is VRFConsumerBaseV2{
             return (upKeepNeeded, "0x0");
 
         }
+
+
+
+    /**
+     * @dev This function will create a requestId to get our random number
+     * after checking if it meets all the checkUpKeep function      
+     */
+
+
 
     function performUpkeep(bytes calldata /* performData */) external{
         // Functionality of pickWinner-
@@ -116,10 +125,7 @@ contract Raffle is VRFConsumerBaseV2{
                 uint256(s_raffleState)
             );
         }
-
-
         s_raffleState = RaffleStates.CALCULATING;
-
 
         // i_vrfCoordinator/COORDINATOR is a vrf coordinator address which depends on chain to chain, in simple terms this is the contract from which we will request random number
         i_vrfCoordinator.requestRandomWords(
@@ -132,7 +138,13 @@ contract Raffle is VRFConsumerBaseV2{
 
     }
 
-    function fulfillRandomWords( /* this is the function we need to call in order to get random numbers and it will process our request id that we made in above function */
+    /**
+     * @dev this is the function we need to call in order to 
+     * get random numbers and it will process our request id 
+     * that we made in above function and after that it will pick a winner
+     */
+
+    function fulfillRandomWords(
         uint256 /* requestId */,
         uint256[] memory randomWords
     ) internal override { /* this is override bcz it exists in the VRFConsumerBaseV2 file, check it to know more */
