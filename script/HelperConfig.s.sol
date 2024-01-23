@@ -31,10 +31,12 @@ contract HelperConfig is Script{
             interval: 30, // in seconds
             vrfCoordinator: 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625,
             gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
-            subscriptionId: 0x0, // add it later
+            subscriptionId: 0, // add it later
             callbackGasLimit: 500000
         });
     }
+
+    
 
     function getOrCreateSapoliaEthConfig() public returns(NetworkConfig memory){
 
@@ -53,7 +55,8 @@ contract HelperConfig is Script{
             interval: 30, // in seconds
             vrfCoordinator: address(vrfCoordinatorV2Mock),
             gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c, // doesn't matter
-            subscriptionId: 0x0, // add it later
+            subscriptionId: 0, // add it later
+            // subscriptionId: vrfCoordinatorV2Mock.createSubscription(), 
             callbackGasLimit: 500000
         });
     }
