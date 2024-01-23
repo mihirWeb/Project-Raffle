@@ -6,12 +6,14 @@ pragma solidity ^0.8.18;
 import {Script, console} from "forge-std/Script.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 import {VRFCoordinatorV2Mock} from "../lib/chainlink-brownie-contracts/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
+import {LinkToken} from "../test/Mocks/LinkToken.sol";
+
 
 contract CreateSubscriptionId is Script {
 
     function createSubsUsingConfig() public returns (uint64) {
         HelperConfig helperConfig = new HelperConfig();
-        (, , address vrfCoordinator, , , ) = helperConfig.activeNetworkConfig();
+        (, , address vrfCoordinator, , , , ) = helperConfig.activeNetworkConfig();
 
         return subscriptionId(vrfCoordinator);
     }
@@ -32,5 +34,47 @@ contract CreateSubscriptionId is Script {
 
     function run() external returns (uint64) {
         return createSubsUsingConfig();
+    }
+}
+
+contract FundSubscriptionId is Script{
+
+    uint96 public constant FUND_AMOUNT = 3 ether;
+    
+    function fundSubscriptionUsingConfig() public{
+        HelperConfig helperConfig = new HelperConfig();
+        (
+            ,
+            ,
+            address vrfCoordinator,
+            ,
+            uint64 subId,
+            ,
+            address link
+        ) = helperConfig.activeNetworkConfig();
+
+        fundSubId(vrfCoordinator, subId, link);
+    }
+
+    function fundSubId(address vrfCoordinator, uint64 subId, address link) public{
+        console.log("VRFcoordinator address: ", vrfCoordinator);
+        console.log("subId value: ", subId);
+        console.log("link address: ", link);
+
+        if(block.chainid == 31337){
+            vm.startBroadcast();
+            VRFCoordinatorV2Mock(vrfCoordinator).fundSubscription(subId, FUND_AMOUNT);
+            vm.stopBroadcast();
+        }
+        else{
+            vm.startBroadcast();
+            LinkToken(link).transferAndCall(vrfCoordinator, FUND_AMOUNT, abi.encode(subId));
+            vm.stopBroadcast();
+        }
+
+    }
+
+    function run() external{
+        fundSubscriptionUsingConfig();
     }
 }
