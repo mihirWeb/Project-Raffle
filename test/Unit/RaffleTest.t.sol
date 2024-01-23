@@ -8,14 +8,24 @@ import {Raffle} from "../../src/Raffle.sol";
 contract RaffleUnitTest is Test{
 
     Raffle raffle;
+    address PLAYER = makeAddr("player");
 
-    function setup() external{
+    function setUp() external{
         DeployRaffle deployRaffle = new DeployRaffle();
         raffle = deployRaffle.run();
+        vm.deal(PLAYER, 10 ether);
     }
 
 
 
-    /////////////////////////////  Unit tests for Enter Raffle Function
+    /////////////////////////////  Unit tests for enterRaffle Function
+
+    function testNotEnoughEthRevert() public{
+
+        vm.prank(PLAYER);
+        vm.expectRevert(Raffle.Raffle_NotEnoughEthSend.selector);
+        raffle.enterRaffle();
+
+    }
   
 }
