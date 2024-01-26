@@ -95,5 +95,20 @@ contract RaffleUnitTest is Test{
         // Assert
         assert(!upKeep);
     }
+
+    function testCheckUpKeepReturnFalseIfRaffleIsCalculating() public{
+
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFees}();
+
+        (bool upKeep, ) = raffle.checkUpKeep("");
+        console.log(upKeep);
+
+        vm.roll(block.number + 1);
+        vm.warp(block.timestamp + interval + 1);
+        raffle.performUpkeep("");
+        console.log(upKeep);
+        assert(!upKeep);
+    }
   
 }
