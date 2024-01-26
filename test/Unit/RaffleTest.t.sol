@@ -31,7 +31,8 @@ contract RaffleUnitTest is Test{
                 vrfCoordinator, 
                 gasLane,
                 subscriptionId,
-                callbackGasLimit
+                callbackGasLimit,
+
             ) = helperConfig.activeNetworkConfig();
         raffle = deployRaffle.run();
         vm.deal(PLAYER, 10 ether);
@@ -74,6 +75,25 @@ contract RaffleUnitTest is Test{
         vm.prank(PLAYER);
         vm.expectRevert(Raffle.Raffle_RaffleNotOpen.selector);
         raffle.enterRaffle{value: entranceFees}();
+    }
+
+
+
+
+    ///////////////////////////////////////// tests for checkUpKeep
+
+
+    function testCheckUpKeepReturnFalseIfRaffleHasNoBalance() public{
+
+        // Arrange i.e. make conditions for the scenerio
+        vm.warp(block.timestamp + interval +1);
+        vm.roll(block.number + 1);
+
+        // Act
+        (bool upKeep, ) = raffle.checkUpKeep("");
+
+        // Assert
+        assert(!upKeep);
     }
   
 }
