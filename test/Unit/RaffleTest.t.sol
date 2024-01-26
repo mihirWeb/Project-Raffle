@@ -123,6 +123,16 @@ contract RaffleUnitTest is Test{
 
     }
 
-    
+    function testCheckUpKeepReturnTrueIfAllParametersAreTrue() public{
+
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFees}();
+
+        vm.roll(block.number + 1);
+        vm.warp(block.timestamp + interval + 1);
+
+        (bool upKeep, ) = raffle.checkUpKeep("");
+        assert(upKeep);
+    }
   
 }
