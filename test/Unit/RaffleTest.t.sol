@@ -110,5 +110,19 @@ contract RaffleUnitTest is Test{
         console.log(upKeep);
         assert(!upKeep);
     }
+
+    function testCheckUpKeepReturnFalseIfEnoughTimeHasntPassed() public{
+
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFees}();
+
+        vm.warp(block.timestamp);
+        // raffle.performUpkeep("");
+        (bool upKeep, ) = raffle.checkUpKeep("");
+        assert(!upKeep);
+
+    }
+
+    
   
 }
