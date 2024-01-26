@@ -46,6 +46,7 @@ contract Raffle is VRFConsumerBaseV2{
     // Events 
     event EnteredRaffle(address indexed player);
     event WinnerPlayer(address indexed winner);
+    event RequestId(uint256 indexed requestId);
 
     constructor(
         uint256 entranceFees, 
@@ -128,13 +129,15 @@ contract Raffle is VRFConsumerBaseV2{
         s_raffleState = RaffleStates.CALCULATING;
 
         // i_vrfCoordinator/COORDINATOR is a vrf coordinator address which depends on chain to chain, in simple terms this is the contract from which we will request random number
-        i_vrfCoordinator.requestRandomWords(
+        uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane, // this is bytes32 gas lane, which tells us how much gas we want to bumb to, it's chain dependent
             i_subscriptionId, // this is our subscription id to the chainlink vrf
             REQUEST_CONFIRMATIONS, // dont know exactly but its default value is 3 and we can set higher
             i_callbackGasLimit, // the max gas we are willinh to spend to the callback function
             NUM_WORDS // how many random numbers we want in return
         );
+
+        emit RequestId(requestId);
 
     }
 
@@ -168,5 +171,9 @@ contract Raffle is VRFConsumerBaseV2{
 
     function getEntranceFees() external view returns(uint256){
         return i_entranceFees;
+    }
+
+    function getRaffleState() external view returns(RaffleStates){
+        return s_raffleState;
     }
 }
