@@ -5,7 +5,7 @@ pragma solidity ^0.8.18;
 import {Raffle} from "../src/Raffle.sol";
 import {Script} from "forge-std/Script.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
-import {CreateSubscriptionId} from "./Integration.s.sol";
+import {CreateSubscriptionId, FundSubscriptionId, AddConsumer} from "./Integration.s.sol";
 
 
 contract DeployRaffle is Script{
@@ -25,6 +25,7 @@ contract DeployRaffle is Script{
         if(subscriptionId == 0){
             CreateSubscriptionId createSubscriptionId = new CreateSubscriptionId();
             subscriptionId = createSubscriptionId.subscriptionId(vrfCoordinator);
+
         }
 
         vm.startBroadcast();
