@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import {Test, console} from "forge-std/Test.sol";
 import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {VRFCoordinatorV2Mock} from "chainlink-brownie-contracts/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {Vm} from "forge-std/Vm.sol";
 
@@ -124,13 +125,7 @@ contract RaffleUnitTest is Test{
 
     }
 
-    function testCheckUpKeepReturnTrueIfAllParametersAreTrue() public{
-
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFees}();
-
-        vm.roll(block.number + 1);
-        vm.warp(block.timestamp + interval + 1);
+    function testCheckUpKeepReturnTrueIfAllParametersAreTrue() public enterRaffleAndTimePassed{
 
         (bool upKeep, ) = raffle.checkUpKeep("");
         assert(upKeep);
@@ -140,12 +135,12 @@ contract RaffleUnitTest is Test{
 
     ////////////////////////////////////////////// tests for performUpKeep
 
-    function testPerformUpKeepOnlyIfUpKeepIsTrue() public{
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFees}();
+    function testPerformUpKeepOnlyIfUpKeepIsTrue() public enterRaffleAndTimePassed{
+        // vm.prank(PLAYER);
+        // raffle.enterRaffle{value: entranceFees}();
 
-        vm.roll(block.number + 1);
-        vm.warp(block.timestamp + interval + 1);
+        // vm.roll(block.number + 1);
+        // vm.warp(block.timestamp + interval + 1);
 
         raffle.performUpkeep("");
     }
@@ -168,14 +163,8 @@ contract RaffleUnitTest is Test{
 
     }
 
-    function testPerformUpKeepEmitEventAndRaffleStateCheck() public{
-        
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFees}();
-
-        vm.roll(block.number + 1);
-        vm.warp(block.timestamp + interval + 1);
-
+    function testPerformUpKeepEmitEventAndRaffleStateCheck() public enterRaffleAndTimePassed{
+       
         vm.recordLogs();
         raffle.performUpkeep("");
         Vm.Log[] memory entries = vm.getRecordedLogs();
@@ -183,9 +172,33 @@ contract RaffleUnitTest is Test{
         bytes32 requestId = entries[1].topics[1];
 
         assert(uint256(requestId)>0);
+        // console.log(requestId);
 
         Raffle.RaffleStates rState = raffle.getRaffleState();
         assert(uint256(rState) == 1);
+    }
+
+    
+
+
+    ////////////////////////////////////////////////// fulfill random words tes
+
+    function testFulfillRandomWordsWillRunAfterPerformUpKeep(uint256 randomRequestId) public enterRaffleAndTimePassed{
+
+        vm.expectRevert("nonexistent request");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(
+            randomRequestId,
+            address(raffle)
+        );
+    }
+
+    modifier enterRaffleAndTimePassed{
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFees}();
+
+        vm.roll(block.number + 1);
+        vm.warp(block.timestamp + interval + 1);
+        _;
     }
   
 }
