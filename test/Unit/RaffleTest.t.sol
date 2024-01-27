@@ -24,6 +24,8 @@ contract RaffleUnitTest is Test{
 
     address PLAYER = makeAddr("player");
 
+    uint256 constant STARTING_BALANCE = 10 ether;
+
     function setUp() external{
         DeployRaffle deployRaffle = new DeployRaffle();
         helperConfig = new HelperConfig();
@@ -37,7 +39,7 @@ contract RaffleUnitTest is Test{
 
             ) = helperConfig.activeNetworkConfig();
         raffle = deployRaffle.run();
-        vm.deal(PLAYER, 10 ether);
+        vm.deal(PLAYER, STARTING_BALANCE);
     }
 
 
@@ -190,6 +192,21 @@ contract RaffleUnitTest is Test{
             randomRequestId,
             address(raffle)
         );
+    }
+
+    function testFulfillRandomWordsWillPickWinnerAndResetArray() public enterRaffleAndTimePassed{
+
+        uint256 startingIndex = 1;
+        uint256 Players = 5;
+
+        for(uint256 i=startingIndex; i<= Players; i++){
+            address newPlayer = address(uint160(i));
+            hoax(newPlayer, STARTING_BALANCE);
+            raffle.enterRaffle{value: entranceFees}();
+
+        }
+
+
     }
 
     modifier enterRaffleAndTimePassed{
