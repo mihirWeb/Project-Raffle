@@ -19,6 +19,7 @@ contract RaffleUnitTest is Test{
     bytes32 gasLane;
     uint64 subscriptionId;
     uint32 callbackGasLimit;
+    address link;
 
     event EnteredRaffle(address indexed player);
 
@@ -36,7 +37,8 @@ contract RaffleUnitTest is Test{
                 gasLane,
                 subscriptionId,
                 callbackGasLimit,
-
+                link,
+                
             ) = helperConfig.activeNetworkConfig();
         raffle = deployRaffle.run();
         vm.deal(PLAYER, STARTING_BALANCE);
@@ -197,17 +199,40 @@ contract RaffleUnitTest is Test{
     function testFulfillRandomWordsWillPickWinnerAndResetArray() public enterRaffleAndTimePassed{
 
         uint256 startingIndex = 1;
-        uint256 Players = 5;
+        uint256 players = 5;
 
-        for(uint256 i=startingIndex; i<= Players; i++){
+        for(uint256 i=startingIndex; i<= players; i++){
             address newPlayer = address(uint160(i));
             hoax(newPlayer, STARTING_BALANCE);
             raffle.enterRaffle{value: entranceFees}();
 
         }
 
+        vm.recordLogs();
+        raffle.performUpkeep("");
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[1];
+        // console.log(requestId);
+
+        uint256 previousTimeStamp = block.timestamp;
+        uint256 prize = raffle.getRecentWinner().balance + players*entranceFees;
+
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(
+            uint256(requestId),
+            address(raffle)
+        ); 
+
+        assert(raffle.getRecentWinner() != address(0));
+        assert(raffle.getTotalPlayers() == 0);
+        assert(uint256(raffle.getRaffleState()) == 0);
+        assert(previousTimeStamp< raffle.getLatestTimestamp());
+        assert(raffle.getRecentWinner().balance == prize);
+
 
     }
+
+
+    /////////////////////////////////////////// MODIFIERS
 
     modifier enterRaffleAndTimePassed{
         vm.prank(PLAYER);
