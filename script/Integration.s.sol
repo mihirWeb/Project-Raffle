@@ -14,15 +14,15 @@ contract CreateSubscriptionId is Script {
 
     function createSubsUsingConfig() public returns (uint64) {
         HelperConfig helperConfig = new HelperConfig();
-        (, , address vrfCoordinator, , , , , ) = helperConfig.activeNetworkConfig();
+        (, , address vrfCoordinator, , , , , uint256 deployerKey) = helperConfig.activeNetworkConfig();
 
-        return subscriptionId(vrfCoordinator);
+        return subscriptionId(vrfCoordinator, deployerKey);
     }
 
-    function subscriptionId(address vrfCoordinator) public returns(uint64){
+    function subscriptionId(address vrfCoordinator, uint256 deployerKey) public returns(uint64){
         
         console.log("Creating subscription ID on: ", block.chainid);
-        vm.startBroadcast();
+        vm.startBroadcast(deployerKey);
         uint64 subId = VRFCoordinatorV2Mock(vrfCoordinator).createSubscription();
         // with this we created the instance of our already deployed VRFcoordinatorV2Mock on vrfcoordinator address
         // so that we can access it's createSubscription function
@@ -52,24 +52,24 @@ contract FundSubscriptionId is Script{
             uint64 subId,
             ,
             address link,
-            
+            uint256 deployerKey
         ) = helperConfig.activeNetworkConfig();
 
-        fundSubId(vrfCoordinator, subId, link);
+        fundSubId(vrfCoordinator, subId, link, deployerKey);
     }
 
-    function fundSubId(address vrfCoordinator, uint64 subId, address link) public{
+    function fundSubId(address vrfCoordinator, uint64 subId, address link, uint256 deployerKey) public{
         console.log("VRFcoordinator address: ", vrfCoordinator);
         console.log("subId value: ", subId);
         console.log("link address: ", link);
 
         if(block.chainid == 31337){
-            vm.startBroadcast();
+            vm.startBroadcast(deployerKey);
             VRFCoordinatorV2Mock(vrfCoordinator).fundSubscription(subId, FUND_AMOUNT);
             vm.stopBroadcast();
         }
         else{
-            vm.startBroadcast();
+            vm.startBroadcast(deployerKey);
             LinkToken(link).transferAndCall(vrfCoordinator, FUND_AMOUNT, abi.encode(subId));
             vm.stopBroadcast();
         }
