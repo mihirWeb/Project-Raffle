@@ -10,7 +10,7 @@ import {CreateSubscriptionId, FundSubscriptionId, AddConsumer} from "./Integrati
 
 contract DeployRaffle is Script{
 
-    function run() external returns(Raffle){
+    function run() external returns(Raffle, HelperConfig){
         HelperConfig helperConfig = new HelperConfig();
         (
             uint256 entranceFees, 
@@ -47,7 +47,7 @@ contract DeployRaffle is Script{
         AddConsumer addConsumer = new AddConsumer();
         addConsumer.addConsumer(vrfCoordinator, address(raffle), subscriptionId, deployerKey);
 
-        return raffle;
+        return (raffle, helperConfig);
     }
 
 }
